@@ -7,23 +7,11 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 /**
  * @swagger
  * /auth/login:
- *   post:
+ *   get:
  *     summary: Autenticar usuario y generar token JWT
  *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
+ *     security:
+ *       - basicAuth: []
  *     responses:
  *       200:
  *         description: Autenticación exitosa
@@ -43,17 +31,28 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
  */
 export const login = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { email, password } = req.body;
+    const auth = req.headers.authorization;
 
-    // Validar que se proporcionaron email y password
-    if (!email || !password) {
+    if (!auth) {
       return res
         .status(400)
-        .json({ message: "Email y contraseña son requeridos" });
+        .json({ message: "Credenciales no proporcionadas" });
     }
 
-    // Buscar usuario por email
-    const user = await User.findOne({ where: { email } });
+    // Decodificar las credenciales de Basic Auth
+    const [username, password] = Buffer.from(auth.split(" ")[1], "base64")
+      .toString()
+      .split(":");
+
+    // Validar que se proporcionaron username y password
+    if (!username || !password) {
+      return res
+        .status(400)
+        .json({ message: "Usuario y contraseña son requeridos" });
+    }
+
+    // Buscar usuario por email (username)
+    const user = await User.findOne({ where: { email: username } });
 
     // Verificar si el usuario existe
     if (!user) {
@@ -145,6 +144,8 @@ export const register = async (
 ): Promise<Response> => {
   try {
     const { firstName, lastName, alias, email, password, birthDate } = req.body;
+
+    console.log("Datos de registro:", req.body);
 
     // Validar campos obligatorios
     if (

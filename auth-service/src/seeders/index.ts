@@ -1,8 +1,11 @@
 import User from "../models/user.model";
-import sequelize from "../config/database";
+import sequelize, { initializeDatabase } from "../config/database";
 
 const seedUsers = async () => {
   try {
+    // Inicializar base de datos
+    await initializeDatabase();
+
     // Sincronizar el modelo con la base de datos
     await sequelize.sync({ force: true });
 
@@ -15,7 +18,8 @@ const seedUsers = async () => {
         lastName: "Pérez",
         alias: "juanp",
         email: "juan@example.com",
-        password: "Password123",
+        password:
+          "$2a$10$1zLMnHxzlH2v2posg1o4Gu38hD9iLyp7f89y29c09NJVJm0OFPcXK",
         birthDate: new Date("1990-01-15"),
       },
       {
@@ -23,7 +27,8 @@ const seedUsers = async () => {
         lastName: "González",
         alias: "mariag",
         email: "maria@example.com",
-        password: "Password123",
+        password:
+          "$2a$10$1zLMnHxzlH2v2posg1o4Gu38hD9iLyp7f89y29c09NJVJm0OFPcXK",
         birthDate: new Date("1992-05-22"),
       },
       {
@@ -31,7 +36,8 @@ const seedUsers = async () => {
         lastName: "Rodríguez",
         alias: "carlosr",
         email: "carlos@example.com",
-        password: "Password123",
+        password:
+          "$2a$10$1zLMnHxzlH2v2posg1o4Gu38hD9iLyp7f89y29c09NJVJm0OFPcXK",
         birthDate: new Date("1988-09-30"),
       },
       {
@@ -39,7 +45,8 @@ const seedUsers = async () => {
         lastName: "Martínez",
         alias: "anam",
         email: "ana@example.com",
-        password: "Password123",
+        password:
+          "$2a$10$1zLMnHxzlH2v2posg1o4Gu38hD9iLyp7f89y29c09NJVJm0OFPcXK",
         birthDate: new Date("1995-03-10"),
       },
       {
@@ -47,7 +54,8 @@ const seedUsers = async () => {
         lastName: "López",
         alias: "pedrol",
         email: "pedro@example.com",
-        password: "Password123",
+        password:
+          "$2a$10$1zLMnHxzlH2v2posg1o4Gu38hD9iLyp7f89y29c09NJVJm0OFPcXK",
         birthDate: new Date("1985-12-05"),
       },
     ];
@@ -65,8 +73,8 @@ const seedUsers = async () => {
 };
 
 // Ejecutar el seeder si este archivo se ejecuta directamente
-if (require.main === module) {
-  seedUsers();
-}
+// if (require.main === module) {
+seedUsers();
+// }
 
 export default seedUsers;
