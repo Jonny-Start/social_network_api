@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import Post from "../models/post.model";
 import Like from "../models/like.model";
-import sequelize from "../config/database";
+import sequelize from "./../config/database";
 
 /**
  * @swagger
@@ -240,8 +240,9 @@ export const createPost = async (
  */
 export const likePost = async (req: any, res: Response): Promise<Response> => {
   try {
-    const { id } = req.params;
+    const { postId } = req.body;
     const userId = req.user.id;
+    const id = postId;    
 
     // Verificar si la publicación existe
     const post = await Post.findByPk(id);

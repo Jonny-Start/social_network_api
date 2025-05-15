@@ -1,17 +1,21 @@
-# Usa la imagen base de Node.js
-FROM node:20
+FROM node:18-alpine
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos del proyecto
+# Copiar archivos de package.json primero para aprovechar la caché de Docker
 COPY package*.json ./
-RUN npm run build && npm install
 
+# Instalar dependencias
+RUN npm install
+
+# Copiar el resto del código
 COPY . .
 
-# Expone el puerto
+# Si tienes un paso de compilación (TypeScript a JavaScript)
+RUN npm run build
+
+# Exponer el puerto que usa la aplicación
 EXPOSE 3002
 
-# Comando para iniciar el microservicio
-CMD ["npm", "start"]
+# Comando para iniciar la aplicación
+CMD ["npm", "run", "start"]

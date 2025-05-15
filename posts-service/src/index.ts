@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas
-app.use("/api/posts", postsRoutes);
+app.use("/", postsRoutes);
 
 // Documentación Swagger
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
@@ -33,7 +33,7 @@ sequelize
       console.log(`Servicio de publicaciones escuchando en el puerto ${PORT}`);
     });
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     console.error("Error al conectar con la base de datos:", error);
   });
 

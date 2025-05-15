@@ -1,5 +1,5 @@
 import Post from "../models/post.model";
-import sequelize from "../config/database";
+import sequelize from "./../config/database";
 
 const seedPosts = async () => {
   try {

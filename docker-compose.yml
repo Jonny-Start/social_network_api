@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   postgres:
-    image: postgres:14              # Corregido: indentación
+    image: postgres:14
     container_name: postgres_db
     environment:
       POSTGRES_USER: userDev
@@ -41,35 +41,48 @@ services:
       - microservices-network
     restart: always
 
-  # profile-service:
-  #   build: ./profile-service
-  #   ports:
-  #     - "3002:3000"
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_NAME: social_network_db
-  #     DB_USER: miuser
-  #     DB_PASSWORD: mipass
-  #   networks:
-  #     - microservices-network
+  posts-service:
+    build:
+      context: ./posts-service
+      dockerfile: Dockerfile
+    container_name: posts_service
+    environment:
+      DB_USERNAME: userDev
+      DB_PASSWORD: "Jonny 09"
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+      DB_NAME: social_network_db
+      NODE_ENV: development
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: always
 
-  # posts-service:
-  #   build: ./posts-service
-  #   ports:
-  #     - "3003:3000"
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_NAME: social_network_db
-  #     DB_USER: miuser
-  #     DB_PASSWORD: mipass
-  #   networks:
-  #     - microservices-network
+  profile-service:
+    build:
+      context: ./profile-service
+      dockerfile: Dockerfile
+    container_name: profile_service
+    environment:
+      DB_USERNAME: userDev
+      DB_PASSWORD: "Jonny 09"
+      DB_HOST: postgres_db
+      DB_PORT: 5432
+      DB_NAME: social_network_db
+      NODE_ENV: development
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: always
+
 
   api-gateway:
     build:
@@ -78,10 +91,10 @@ services:
     container_name: api_gateway
     depends_on:
       - auth-service
-      # - profile-service
-      # - posts-service
+      - profile-service
+      - posts-service
     ports:
-      - "3000:3000"  # mapear puerto externo 8000 al interno 3000 del gateway
+      - "3000:3000"
     networks:
       - microservices-network
 

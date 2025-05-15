@@ -87,33 +87,130 @@ app.use(
   })
 );
 
-// Peticiones a /user/* → profile-service
-app.use(
-  "/user",
-  createProxyMiddleware({
-    target: "http://profile-service:3002",
-    changeOrigin: true,
-    pathRewrite: {
-      "^/user": "", // Elimina /user del path antes de enviarlo al servicio
-    },
-    onProxyReq: (proxyReq, req) => {
-      // Log para depuración
-      console.log(
-        `Proxy request to profile-service: ${req.method} ${req.path}`
-      );
-    },
-  })
-);
-
 // Peticiones a /posts/* → posts-service
 app.use(
   "/posts",
   createProxyMiddleware({
-    target: "http://posts-service:3003",
+    target: "http://posts-service:3002",
+    pathRewrite: {
+      "^/posts": "",
+    },
     changeOrigin: true,
-    onProxyReq: (proxyReq, req) => {
-      // Log para depuración
-      console.log(`Proxy request to posts-service: ${req.method} ${req.path}`);
+    timeout: 30000,
+    proxyTimeout: 30000,
+    ws: true, // Soporte para WebSockets
+    // Remove buffer option as it's not compatible
+    onProxyReq: function (proxyReq, req, res) {
+      // Si hay un body, asegurarse de que se maneje correctamente
+      if (req.body) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader("Content-Type", "application/json");
+        proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log("Request al servicio de posts:", {
+        method: req.method,
+        url: req.originalUrl,
+        body: req.body,
+        headers: proxyReq.getHeaders(),
+      });
+    },
+    onProxyRes: function (proxyRes, req, res) {
+      let responseBody = "";
+      proxyRes.on("data", function (data) {
+        responseBody += data.toString("utf8");
+      });
+      proxyRes.on("end", function () {
+        try {
+          const parsedBody = responseBody ? JSON.parse(responseBody) : "";
+          console.log("Respuesta del servicio de posts:", {
+            statusCode: proxyRes.statusCode,
+            body: parsedBody,
+            headers: proxyRes.headers,
+          });
+        } catch (e) {
+          console.error("Error parsing response:", e);
+        }
+      });
+    },
+    onError: (err: Error & { code?: string }, req, res) => {
+      console.error("Error en proxy de posts:", {
+        message: err.message,
+        stack: err.stack,
+        code: err.code || "UNKNOWN_ERROR",
+        path: req.path,
+      });
+
+      res.status(502).json({
+        error: "Error de comunicación con el servicio de posts",
+        message: err.message,
+        code: err.code || "UNKNOWN_ERROR",
+      });
+    },
+  })
+);
+
+// Peticiones a /user/* → profile-service
+app.use(
+  "/user",
+  createProxyMiddleware({
+    target: "http://profile-service:3003",
+    pathRewrite: {
+      "^/user": "",
+    },
+    changeOrigin: true,
+    timeout: 30000,
+    proxyTimeout: 30000,
+    ws: true, // Soporte para WebSockets
+    // Remove buffer option as it's not compatible
+    onProxyReq: function (proxyReq, req, res) {
+      // Si hay un body, asegurarse de que se maneje correctamente
+      if (req.body) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader("Content-Type", "application/json");
+        proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
+
+      console.log("Request al servicio de user:", {
+        method: req.method,
+        url: req.originalUrl,
+        body: req.body,
+        headers: proxyReq.getHeaders(),
+      });
+    },
+    onProxyRes: function (proxyRes, req, res) {
+      let responseBody = "";
+      proxyRes.on("data", function (data) {
+        responseBody += data.toString("utf8");
+      });
+      proxyRes.on("end", function () {
+        try {
+          const parsedBody = responseBody ? JSON.parse(responseBody) : "";
+          console.log("Respuesta del servicio de user:", {
+            statusCode: proxyRes.statusCode,
+            body: parsedBody,
+            headers: proxyRes.headers,
+          });
+        } catch (e) {
+          console.error("Error parsing response:", e);
+        }
+      });
+    },
+    onError: (err: Error & { code?: string }, req, res) => {
+      console.error("Error en proxy de user:", {
+        message: err.message,
+        stack: err.stack,
+        code: err.code || "UNKNOWN_ERROR",
+        path: req.path,
+      });
+
+      res.status(502).json({
+        error: "Error de comunicación con el servicio de user",
+        message: err.message,
+        code: err.code || "UNKNOWN_ERROR",
+      });
     },
   })
 );
@@ -134,12 +231,33 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ error: "Internal Server Error" });
 });
 
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    res.status(504).json({
+      error: "Gateway Timeout",
+      message: "La solicitud ha excedido el tiempo máximo permitido",
+    });
+  });
+  next();
+});
+
+// Middleware mejorado para manejo de errores
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error("Error details:", err);
-  res.status(500).json({
-    error: "Internal Server Error",
+  console.error("Error en API Gateway:", {
     message: err.message,
     stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
+    path: req.path,
+    method: req.method,
+  });
+
+  const statusCode = (err as any).statusCode || 500;
+
+  res.status(statusCode).json({
+    error: err.name || "Error Interno",
+    message: err.message,
+    path: req.path,
+    timestamp: new Date().toISOString(),
+    requestId: req.headers["x-request-id"],
   });
 });
 

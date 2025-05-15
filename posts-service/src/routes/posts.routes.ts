@@ -15,9 +15,9 @@ router.use(authenticate);
 
 // Rutas de publicaciones
 router.get("/", getAllPosts);
-router.get("/:id", getPostById);
 router.post("/", createPost);
-router.post("/:id/like", likePost);
+router.post("/like", likePost);
+router.get("/:id", getPostById);
 router.get("/user/:userId", getUserPosts);
 
 export default router;
